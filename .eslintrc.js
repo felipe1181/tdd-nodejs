@@ -15,5 +15,7 @@ module.exports = {
     ecmaVersion: 11
   },
   rules: {
+    'no-param-reassing': 'off',
+    'no-unused-vars': ['error', { argsIgnorePattern: 'next' }]
   }
 }
