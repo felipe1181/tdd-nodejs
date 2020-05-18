@@ -2,20 +2,15 @@ module.exports = {
   env: {
     commonjs: true,
     es6: true,
-    node: true,
+    node: true
   },
-  extends: ["standard", "prettier"],
-  plugins: ["prettier"],
+  extends: ['standard'],
   globals: {
-    Atomics: "readonly",
-    SharedArrayBuffer: "readonly",
+    Atomics: 'readonly',
+    SharedArrayBuffer: 'readonly'
   },
   parserOptions: {
-    ecmaVersion: 11,
+    ecmaVersion: 2018
   },
-  rules: {
-    "prettier/prettier": "error",
-    "no-param-reassing": "off",
-    "no-unused-vars": ["error", { argsIgnorePattern: "next" }],
-  },
-};
+  rules: {}
+}
