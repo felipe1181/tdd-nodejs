@@ -63,4 +63,15 @@ describe('Login router', () => {
     expect(authUseCaseSpy.email).toBe(httpRequest.body.email)
     expect(authUseCaseSpy.senha).toBe(httpRequest.body.senha)
   })
+  test('devemos retornar 401 caso tenha credenciais inválidas', () => {
+    const { sut } = makeFactorySut() // System under test
+    const httpRequest = {
+      body: {
+        email: 'email_invalido@email.com',
+        senha: 'senha_invalida'
+      }
+    }
+    const httpResponse = sut.route(httpRequest)
+    expect(httpResponse.statusCode).toBe(401)
+  })
 })
