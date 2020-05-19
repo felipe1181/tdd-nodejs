@@ -2,12 +2,20 @@ const LoginRouter = require('./login-router')
 const MissingParamError = require('../helpers/missing-param-error')
 
 function makeFactorySut () {
-  return new LoginRouter()
+  class AuthUseCaseSpy {
+    auth (email, senha) {
+      this.email = email
+      this.senha = senha
+    }
+  }
+  const authUseCaseSpy = new AuthUseCaseSpy()
+  const sut = new LoginRouter(authUseCaseSpy)
+  return { authUseCaseSpy, sut }
 }
 
 describe('Login router', () => {
-  test('retornar erro 400 se email não existir', () => {
-    const sut = makeFactorySut() // System under test
+  test('vememos retornar erro 400 se email não existir', () => {
+    const { sut } = makeFactorySut() // System under test
     const httpRequest = {
       body: {
         senha: 'minha_senha'
@@ -18,8 +26,8 @@ describe('Login router', () => {
     expect(httpResponse.body).toEqual(new MissingParamError('email'))
   })
 
-  test('retornar erro 400 se senha não existir ', () => {
-    const sut = makeFactorySut() // System under test
+  test('devemos retornar erro 400 se senha não existir ', () => {
+    const { sut } = makeFactorySut() // System under test
     const httpRequest = {
       body: {
         email: 'meu_email@email.com'
@@ -30,16 +38,29 @@ describe('Login router', () => {
     expect(httpResponse.body).toEqual(new MissingParamError('senha'))
   })
 
-  test('retornar erro 500 se não haver httprequest', () => {
-    const sut = makeFactorySut() // System under test
+  test('devemos retornar erro 500 se não haver httprequest', () => {
+    const { sut } = makeFactorySut() // System under test
     const httpResponse = sut.route()
     expect(httpResponse.statusCode).toBe(500)
   })
 
-  test('retornar erro 500 se body não existir', () => {
-    const sut = makeFactorySut() // System under test
+  test('devemos retornar erro 500 se body não existir', () => {
+    const { sut } = makeFactorySut() // System under test
     const httpRequest = {}
     const httpResponse = sut.route(httpRequest)
     expect(httpResponse.statusCode).toBe(500)
+  })
+
+  test('devemos chamar authUseCase com os parametros corretos', () => {
+    const { sut, authUseCaseSpy } = makeFactorySut() // System under test
+    const httpRequest = {
+      body: {
+        email: 'meu_email@email.com',
+        senha: 'minha_senha'
+      }
+    }
+    sut.route(httpRequest)
+    expect(authUseCaseSpy.email).toBe(httpRequest.body.email)
+    expect(authUseCaseSpy.senha).toBe(httpRequest.body.senha)
   })
 })
