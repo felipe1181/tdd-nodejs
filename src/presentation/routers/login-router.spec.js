@@ -81,7 +81,7 @@ describe('Login router', () => {
   })
 
   test('deve retornar 200 caso as credenciais estejam corretas', () => {
-    const { sut } = makeFactorySut() // System under test
+    const { sut, authUseCaseSpy } = makeFactorySut() // System under test
 
     const httpRequest = {
       body: {
@@ -91,6 +91,7 @@ describe('Login router', () => {
     }
     const httpResponse = sut.route(httpRequest)
     expect(httpResponse.statusCode).toBe(200)
+    expect(httpResponse.body.tokenDeAcesso).toEqual(authUseCaseSpy.tokenDeAcesso)
   })
 
   test('deve retornar 500 caso authUseCase não existir', () => {
