@@ -4,6 +4,12 @@ const UnauthorizedError = require('../helpers/unauthorized-error')
 const ServerError = require('../helpers/server-error')
 
 function makeFactorySut () {
+  const authUseCaseSpy = makeFactoryAuthUseCase()
+  authUseCaseSpy.tokenDeAcesso = 'token_valido'
+  const sut = new LoginRouter(authUseCaseSpy)
+  return { authUseCaseSpy, sut }
+}
+function makeFactoryAuthUseCase () {
   class AuthUseCaseSpy {
     auth (email, senha) {
       this.email = email
@@ -11,10 +17,7 @@ function makeFactorySut () {
       return this.tokenDeAcesso
     }
   }
-  const authUseCaseSpy = new AuthUseCaseSpy()
-  authUseCaseSpy.tokenDeAcesso = 'token_valido'
-  const sut = new LoginRouter(authUseCaseSpy)
-  return { authUseCaseSpy, sut }
+  return new AuthUseCaseSpy()
 }
 
 function makeFactoryAuthUseCaseError () {
@@ -122,8 +125,6 @@ describe('Login router', () => {
 
   test('deve retornar 500 caso authUseCase disparar uma throw', () => {
     const authUseCaseSpyError = makeFactoryAuthUseCaseError()
-    authUseCaseSpyError.tokenDeAcesso = 'token_valido'
-
     const sut = new LoginRouter(authUseCaseSpyError) // spy authUseCase irá disparar uma throw
     const httpRequest = {
       body: {
