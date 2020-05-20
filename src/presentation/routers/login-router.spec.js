@@ -1,6 +1,7 @@
 const LoginRouter = require('./login-router')
 const MissingParamError = require('../helpers/missing-param-error')
 const UnauthorizedError = require('../helpers/unauthorized-error')
+const ServerError = require('../helpers/server-error')
 
 function makeFactorySut () {
   class AuthUseCaseSpy {
@@ -14,6 +15,16 @@ function makeFactorySut () {
   authUseCaseSpy.tokenDeAcesso = 'token_valido'
   const sut = new LoginRouter(authUseCaseSpy)
   return { authUseCaseSpy, sut }
+}
+
+function makeFactoryAuthUseCaseError () {
+  class AuthUseCaseSpy {
+    auth (email, senha) {
+      throw new Error()
+    }
+  }
+
+  return new AuthUseCaseSpy()
 }
 
 describe('Login router', () => {
@@ -45,6 +56,7 @@ describe('Login router', () => {
     const { sut } = makeFactorySut() // System under test
     const httpResponse = sut.route()
     expect(httpResponse.statusCode).toBe(500)
+    expect(httpResponse.body).toEqual(new ServerError())
   })
 
   test('deve retornar erro 500 se body não existir', () => {
@@ -52,6 +64,7 @@ describe('Login router', () => {
     const httpRequest = {}
     const httpResponse = sut.route(httpRequest)
     expect(httpResponse.statusCode).toBe(500)
+    expect(httpResponse.body).toEqual(new ServerError())
   })
 
   test('deve chamar authUseCase com os parametros corretos', () => {
@@ -96,6 +109,22 @@ describe('Login router', () => {
 
   test('deve retornar 500 caso authUseCase não existir', () => {
     const sut = new LoginRouter({}) // spy authUseCase vazio
+    const httpRequest = {
+      body: {
+        email: 'meu_email@email.com',
+        senha: 'minha_senha'
+      }
+    }
+    const httpResponse = sut.route(httpRequest)
+    expect(httpResponse.statusCode).toBe(500)
+    expect(httpResponse.body).toEqual(new ServerError())
+  })
+
+  test('deve retornar 500 caso authUseCase disparar uma throw', () => {
+    const authUseCaseSpyError = makeFactoryAuthUseCaseError()
+    authUseCaseSpyError.tokenDeAcesso = 'token_valido'
+
+    const sut = new LoginRouter(authUseCaseSpyError) // spy authUseCase irá disparar uma throw
     const httpRequest = {
       body: {
         email: 'meu_email@email.com',
