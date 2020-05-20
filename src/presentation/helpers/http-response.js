@@ -9,6 +9,10 @@ module.exports = class httpResponse {
     return { statusCode: 500 }
   }
 
+  static ok () {
+    return { statusCode: 200 }
+  }
+
   static unauthorizedError () {
     return { statusCode: 401, body: new UnauthorizedError() }
   }
