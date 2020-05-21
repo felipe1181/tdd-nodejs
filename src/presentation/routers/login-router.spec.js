@@ -1,13 +1,19 @@
 const LoginRouter = require('./login-router')
 const MissingParamError = require('../helpers/missing-param-error')
+const InvalidParamError = require('../helpers/invalid-param-error')
 const UnauthorizedError = require('../helpers/unauthorized-error')
 const ServerError = require('../helpers/server-error')
 
 function makeFactorySut () {
   const authUseCaseSpy = makeFactoryAuthUseCase()
-  authUseCaseSpy.tokenDeAcesso = 'token_valido'
-  const sut = new LoginRouter(authUseCaseSpy)
-  return { authUseCaseSpy, sut }
+  const emailValidatorSpy = makeFactoryEmailValidatorSpy()
+  const sut = new LoginRouter(authUseCaseSpy, emailValidatorSpy)
+
+  return {
+    sut,
+    authUseCaseSpy,
+    emailValidatorSpy
+  }
 }
 function makeFactoryAuthUseCase () {
   class AuthUseCaseSpy {
@@ -17,7 +23,9 @@ function makeFactoryAuthUseCase () {
       return this.tokenDeAcesso
     }
   }
-  return new AuthUseCaseSpy()
+  const authUseCaseSpy = new AuthUseCaseSpy()
+  authUseCaseSpy.tokenDeAcesso = 'token_valido'
+  return authUseCaseSpy
 }
 
 function makeFactoryAuthUseCaseError () {
@@ -28,6 +36,17 @@ function makeFactoryAuthUseCaseError () {
   }
 
   return new AuthUseCaseSpy()
+}
+
+function makeFactoryEmailValidatorSpy () {
+  class EmailValidatorSpy {
+    isValid (email) {
+      return this.isEmailValid
+    }
+  }
+  const emailValidatorSpy = new EmailValidatorSpy()
+  emailValidatorSpy.isEmailValid = true
+  return emailValidatorSpy
 }
 
 describe('Login router', () => {
@@ -75,6 +94,7 @@ describe('Login router', () => {
       }
     }
     await sut.route(httpRequest)
+
     expect(authUseCaseSpy.email).toBe(httpRequest.body.email)
     expect(authUseCaseSpy.senha).toBe(httpRequest.body.senha)
   })
@@ -127,5 +147,19 @@ describe('Login router', () => {
     }
     const httpResponse = await sut.route(httpRequest)
     expect(httpResponse.statusCode).toBe(500)
+  })
+  test('deve retornar erro 400 se email não for válido', async () => {
+    const { sut, emailValidatorSpy } = makeFactorySut() // System under test
+    emailValidatorSpy.isEmailValid = false
+
+    const httpRequest = {
+      body: {
+        email: 'email_invalido',
+        senha: 'minha_senha'
+      }
+    }
+    const httpResponse = await sut.route(httpRequest)
+    expect(httpResponse.statusCode).toBe(400)
+    expect(httpResponse.body).toEqual(new InvalidParamError('email'))
   })
 })
