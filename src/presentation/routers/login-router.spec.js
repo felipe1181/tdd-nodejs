@@ -11,7 +11,7 @@ function makeFactorySut () {
 }
 function makeFactoryAuthUseCase () {
   class AuthUseCaseSpy {
-    auth (email, senha) {
+    async auth (email, senha) {
       this.email = email
       this.senha = senha
       return this.tokenDeAcesso
@@ -22,7 +22,7 @@ function makeFactoryAuthUseCase () {
 
 function makeFactoryAuthUseCaseError () {
   class AuthUseCaseSpy {
-    auth (email, senha) {
+    async auth (email, senha) {
       throw new Error()
     }
   }
@@ -31,46 +31,42 @@ function makeFactoryAuthUseCaseError () {
 }
 
 describe('Login router', () => {
-  test('vememos retornar erro 400 se email não existir', () => {
+  test('deve retornar erro 400 se email não existir', async () => {
     const { sut } = makeFactorySut() // System under test
     const httpRequest = {
       body: {
         senha: 'minha_senha'
       }
     }
-    const httpResponse = sut.route(httpRequest)
+    const httpResponse = await sut.route(httpRequest)
     expect(httpResponse.statusCode).toBe(400)
     expect(httpResponse.body).toEqual(new MissingParamError('email'))
   })
-
-  test('deve retornar erro 400 se senha não existir ', () => {
+  test('deve retornar erro 400 se senha não existir', async () => {
     const { sut } = makeFactorySut() // System under test
     const httpRequest = {
       body: {
         email: 'meu_email@email.com'
       }
     }
-    const httpResponse = sut.route(httpRequest)
+    const httpResponse = await sut.route(httpRequest)
     expect(httpResponse.statusCode).toBe(400)
     expect(httpResponse.body).toEqual(new MissingParamError('senha'))
   })
-
-  test('deve retornar erro 500 se não haver httprequest', () => {
+  test('deve retornar erro 500 se não haver httprequest', async () => {
     const { sut } = makeFactorySut() // System under test
-    const httpResponse = sut.route()
+    const httpResponse = await sut.route()
     expect(httpResponse.statusCode).toBe(500)
     expect(httpResponse.body).toEqual(new ServerError())
   })
-
-  test('deve retornar erro 500 se body não existir', () => {
+  test('deve retornar erro 500 se body não existir', async () => {
     const { sut } = makeFactorySut() // System under test
     const httpRequest = {}
-    const httpResponse = sut.route(httpRequest)
+    const httpResponse = await sut.route(httpRequest)
     expect(httpResponse.statusCode).toBe(500)
     expect(httpResponse.body).toEqual(new ServerError())
   })
-
-  test('deve chamar authUseCase com os parametros corretos', () => {
+  test('deve chamar authUseCase com os parametros corretos', async () => {
     const { sut, authUseCaseSpy } = makeFactorySut() // System under test
     const httpRequest = {
       body: {
@@ -78,11 +74,11 @@ describe('Login router', () => {
         senha: 'minha_senha'
       }
     }
-    sut.route(httpRequest)
+    await sut.route(httpRequest)
     expect(authUseCaseSpy.email).toBe(httpRequest.body.email)
     expect(authUseCaseSpy.senha).toBe(httpRequest.body.senha)
   })
-  test('deve retornar 401 caso tenha credenciais inválidas', () => {
+  test('deve retornar 401 caso tenha credenciais inválidas', async () => {
     const { sut, authUseCaseSpy } = makeFactorySut() // System under test
     authUseCaseSpy.tokenDeAcesso = null
 
@@ -92,11 +88,10 @@ describe('Login router', () => {
         senha: 'senha_invalida'
       }
     }
-    const httpResponse = sut.route(httpRequest)
+    const httpResponse = await sut.route(httpRequest)
     expect(httpResponse.body).toEqual(new UnauthorizedError())
   })
-
-  test('deve retornar 200 caso as credenciais estejam corretas', () => {
+  test('deve retornar 200 caso as credenciais estejam corretas', async () => {
     const { sut, authUseCaseSpy } = makeFactorySut() // System under test
 
     const httpRequest = {
@@ -105,12 +100,11 @@ describe('Login router', () => {
         senha: 'senha_valida'
       }
     }
-    const httpResponse = sut.route(httpRequest)
+    const httpResponse = await sut.route(httpRequest)
     expect(httpResponse.statusCode).toBe(200)
     expect(httpResponse.body.tokenDeAcesso).toEqual(authUseCaseSpy.tokenDeAcesso)
   })
-
-  test('deve retornar 500 caso authUseCase não existir', () => {
+  test('deve retornar 500 caso authUseCase não existir', async () => {
     const sut = new LoginRouter({}) // spy authUseCase vazio
     const httpRequest = {
       body: {
@@ -118,12 +112,11 @@ describe('Login router', () => {
         senha: 'minha_senha'
       }
     }
-    const httpResponse = sut.route(httpRequest)
+    const httpResponse = await sut.route(httpRequest)
     expect(httpResponse.statusCode).toBe(500)
     expect(httpResponse.body).toEqual(new ServerError())
   })
-
-  test('deve retornar 500 caso authUseCase disparar uma throw', () => {
+  test('deve retornar 500 caso authUseCase disparar uma throw', async () => {
     const authUseCaseSpyError = makeFactoryAuthUseCaseError()
     const sut = new LoginRouter(authUseCaseSpyError) // spy authUseCase irá disparar uma throw
     const httpRequest = {
@@ -132,7 +125,7 @@ describe('Login router', () => {
         senha: 'minha_senha'
       }
     }
-    const httpResponse = sut.route(httpRequest)
+    const httpResponse = await sut.route(httpRequest)
     expect(httpResponse.statusCode).toBe(500)
   })
 })
